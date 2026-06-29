@@ -1,0 +1,622 @@
+// ============================================================
+// TVS Enterprise Resource Management System
+// Prisma Schema — PostgreSQL
+// ============================================================
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearch"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  PROJECT_MANAGER
+  TEAM_LEAD
+  EMPLOYEE
+}
+
+enum ProjectStatus {
+  YET_TO_START
+  ACTIVE
+  INACTIVE
+}
+
+enum ProjectPriority {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum TaskStatus {
+  OPEN
+  IN_PROGRESS
+  REVIEW
+  BLOCKED
+  COMPLETED
+}
+
+enum TaskPriority {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum AllocationStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum TimesheetStatus {
+  DRAFT
+  SUBMITTED
+  TEAM_LEAD_APPROVED
+  APPROVED
+  REJECTED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  HALF_DAY
+  LEAVE
+  HOLIDAY
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+  ON_LEAVE
+  TERMINATED
+}
+
+enum NotificationType {
+  PROJECT_ASSIGNED
+  TASK_ASSIGNED
+  RESOURCE_ALLOCATED
+  TIMESHEET_SUBMITTED
+  TIMESHEET_APPROVED
+  TIMESHEET_REJECTED
+  PROJECT_DELAYED
+  APPROVAL_PENDING
+  SYSTEM_ALERT
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  APPROVE
+  REJECT
+  EXPORT
+}
+
+enum MilestoneStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  DELAYED
+}
+
+// ============================================================
+// USERS & AUTH
+// ============================================================
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique @db.VarChar(255)
+  passwordHash  String    @db.VarChar(255)
+  firstName     String    @db.VarChar(50)
+  lastName      String    @db.VarChar(50)
+  role          UserRole  @default(EMPLOYEE)
+  isActive      Boolean   @default(true)
+  avatar        String?   @db.VarChar(500)
+  lastLoginAt   DateTime?
+  loginCount    Int       @default(0)
+  passwordChangedAt DateTime?
+  passwordResetToken   String?  @db.VarChar(255)
+  passwordResetExpiry  DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  // Relations
+  employee      Employee?
+  loginHistory  LoginHistory[]
+  notifications Notification[]
+  auditLogs     AuditLog[]
+  timesheetsTLApproved   Timesheet[] @relation("TimesheetTLApprover")
+  timesheetsAdminApproved Timesheet[] @relation("TimesheetAdminApprover")
+  activityLogs  ActivityLog[]
+
+  @@index([email])
+  @@index([role])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("users")
+}
+
+model LoginHistory {
+  id         String   @id @default(uuid())
+  userId     String
+  ipAddress  String?  @db.VarChar(45)
+  userAgent  String?  @db.VarChar(500)
+  device     String?  @db.VarChar(200)
+  location   String?  @db.VarChar(200)
+  success    Boolean  @default(true)
+  failReason String?  @db.VarChar(255)
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("login_history")
+}
+
+// ============================================================
+// DEPARTMENTS
+// ============================================================
+
+model Department {
+  id          String   @id @default(uuid())
+  name        String   @db.VarChar(100)
+  code        String   @unique @db.VarChar(10)
+  description String?  @db.Text
+  managerId   String?
+  parentId    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Self-referencing for hierarchy
+  parent   Department?  @relation("DepartmentHierarchy", fields: [parentId], references: [id])
+  children Department[] @relation("DepartmentHierarchy")
+
+  // Manager is an employee - set separately to avoid circular
+  employees  Employee[]
+  projects   Project[]
+  capacityPlans CapacityPlan[]
+
+  @@index([code])
+  @@index([parentId])
+  @@map("departments")
+}
+
+// ============================================================
+// EMPLOYEES
+// ============================================================
+
+model Employee {
+  id              String         @id @default(uuid())
+  employeeId      String         @unique @db.VarChar(20)
+  userId          String?        @unique
+  firstName       String         @db.VarChar(50)
+  lastName        String         @db.VarChar(50)
+  email           String         @unique @db.VarChar(255)
+  phone           String?        @db.VarChar(20)
+  departmentId    String
+  designation     String         @db.VarChar(100)
+  managerId       String?
+  skills          String[]       @default([])
+  experienceYears Float          @default(0)
+  joiningDate     DateTime       @db.Date
+  status          EmployeeStatus @default(ACTIVE)
+  avatar          String?        @db.VarChar(500)
+  metadata        Json?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  deletedAt       DateTime?
+
+  // Relations
+  user        User?        @relation(fields: [userId], references: [id])
+  department  Department   @relation(fields: [departmentId], references: [id])
+  manager     Employee?    @relation("EmployeeHierarchy", fields: [managerId], references: [id])
+  subordinates Employee[]  @relation("EmployeeHierarchy")
+
+  projectMembers    ProjectMember[]
+  resourceAllocations ResourceAllocation[]
+  timesheets        Timesheet[]
+  attendance        Attendance[]
+  taskAssignments   Task[]
+  capacityPlans     CapacityPlan[]
+
+  @@index([employeeId])
+  @@index([email])
+  @@index([departmentId])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("employees")
+}
+
+// ============================================================
+// PROJECTS
+// ============================================================
+
+model Project {
+  id                   String          @id @default(uuid())
+  projectCode          String          @unique @db.VarChar(20)
+  name                 String          @db.VarChar(200)
+  clientName           String?         @db.VarChar(200)
+  businessUnit         String?         @db.VarChar(100)
+  projectType          String?         @db.VarChar(50)
+  location             String?         @db.VarChar(100)
+  departmentId         String?
+  status               ProjectStatus   @default(YET_TO_START)
+  startDate            DateTime        @db.Date
+  endDate              DateTime        @db.Date
+  plannedHours         Float           @default(0)
+  actualHours          Float           @default(0)
+  completionPercentage Float           @default(0)
+  metadata             Json?
+  createdById          String?
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  deletedAt            DateTime?
+
+  // Relations
+  department      Department?     @relation(fields: [departmentId], references: [id])
+
+  members         ProjectMember[]
+  milestones      Milestone[]
+  tasks           Task[]
+  resourceAllocations ResourceAllocation[]
+  timesheetEntries TimesheetEntry[]
+  documents       ProjectDocument[]
+
+  @@index([projectCode])
+  @@index([status])
+  @@index([departmentId])
+  @@index([startDate, endDate])
+  @@index([deletedAt])
+  @@map("projects")
+}
+
+model ProjectMember {
+  id         String   @id @default(uuid())
+  projectId  String
+  employeeId String
+  role       String   @default("Member") @db.VarChar(100)
+  joinedAt   DateTime @default(now())
+  leftAt     DateTime?
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  employee  Employee @relation(fields: [employeeId], references: [id])
+
+  @@unique([projectId, employeeId])
+  @@index([projectId])
+  @@index([employeeId])
+  @@map("project_members")
+}
+
+model ProjectDocument {
+  id         String   @id @default(uuid())
+  projectId  String
+  name       String   @db.VarChar(255)
+  fileUrl    String   @db.VarChar(500)
+  fileSize   Int
+  mimeType   String   @db.VarChar(100)
+  uploadedById String
+  createdAt  DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("project_documents")
+}
+
+// ============================================================
+// MILESTONES
+// ============================================================
+
+model Milestone {
+  id                   String          @id @default(uuid())
+  projectId            String
+  name                 String          @db.VarChar(200)
+  description          String?         @db.Text
+  plannedStartDate     DateTime        @db.Date
+  plannedEndDate       DateTime        @db.Date
+  actualStartDate      DateTime?       @db.Date
+  actualEndDate        DateTime?       @db.Date
+  status               MilestoneStatus @default(PENDING)
+  weight               Float           @default(0)
+  completionPercentage Float           @default(0)
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks   Task[]
+
+  @@index([projectId])
+  @@index([status])
+  @@map("milestones")
+}
+
+// ============================================================
+// TASKS
+// ============================================================
+
+model Task {
+  id                   String       @id @default(uuid())
+  projectId            String
+  milestoneId          String?
+  parentTaskId         String?
+  name                 String       @db.VarChar(200)
+  description          String?      @db.Text
+  assignedToId         String?
+  priority             TaskPriority @default(MEDIUM)
+  status               TaskStatus   @default(OPEN)
+  estimatedHours       Float        @default(0)
+  actualHours          Float        @default(0)
+  startDate            DateTime?    @db.Date
+  endDate              DateTime?    @db.Date
+  completionPercentage Float        @default(0)
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+  deletedAt            DateTime?
+
+  project    Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  milestone  Milestone? @relation(fields: [milestoneId], references: [id])
+  parent     Task?      @relation("TaskHierarchy", fields: [parentTaskId], references: [id])
+  subtasks   Task[]     @relation("TaskHierarchy")
+  assignedTo Employee?  @relation(fields: [assignedToId], references: [id])
+
+  timesheetEntries TimesheetEntry[]
+
+  @@index([projectId])
+  @@index([milestoneId])
+  @@index([assignedToId])
+  @@index([status])
+  @@index([priority])
+  @@index([deletedAt])
+  @@map("tasks")
+}
+
+// ============================================================
+// RESOURCE ALLOCATION
+// ============================================================
+
+model ResourceAllocation {
+  id             String           @id @default(uuid())
+  employeeId     String
+  projectId      String
+  allocatedHours Float
+  startDate      DateTime         @db.Date
+  endDate        DateTime         @db.Date
+  status         AllocationStatus @default(ACTIVE)
+  notes          String?          @db.Text
+  approvedById   String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+  project  Project  @relation(fields: [projectId], references: [id])
+
+  @@index([employeeId])
+  @@index([projectId])
+  @@index([status])
+  @@index([startDate, endDate])
+  @@map("resource_allocations")
+}
+
+// ============================================================
+// CAPACITY PLANNING
+// ============================================================
+
+model CapacityPlan {
+  id             String   @id @default(uuid())
+  employeeId     String
+  departmentId   String
+  month          Int
+  year           Int
+  capacityHours  Float    @default(176)
+  allocatedHours Float    @default(0)
+  availableHours Float    @default(176)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  employee   Employee   @relation(fields: [employeeId], references: [id])
+  department Department @relation(fields: [departmentId], references: [id])
+
+  @@unique([employeeId, month, year])
+  @@index([employeeId])
+  @@index([departmentId])
+  @@index([month, year])
+  @@map("capacity_plans")
+}
+
+// ============================================================
+// TIMESHEETS
+// ============================================================
+
+model Timesheet {
+  id                String          @id @default(uuid())
+  employeeId        String
+  weekStartDate     DateTime        @db.Date
+  weekEndDate       DateTime        @db.Date
+  status            TimesheetStatus @default(DRAFT)
+  totalHours        Float           @default(0)
+  plannedHours      Float           @default(0)
+  submittedAt       DateTime?
+  approvedByTLId    String?
+  approvedByTLAt    DateTime?
+  approvedByAdminId String?
+  approvedByAdminAt DateTime?
+  rejectionReason   String?         @db.Text
+  tlComments        String?         @db.Text
+  adminComments     String?         @db.Text
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  employee       Employee  @relation(fields: [employeeId], references: [id])
+  approvedByTL   User?     @relation("TimesheetTLApprover", fields: [approvedByTLId], references: [id])
+  approvedByAdmin User?    @relation("TimesheetAdminApprover", fields: [approvedByAdminId], references: [id])
+  entries        TimesheetEntry[]
+
+  @@unique([employeeId, weekStartDate])
+  @@index([employeeId])
+  @@index([status])
+  @@index([weekStartDate])
+  @@map("timesheets")
+}
+
+model TimesheetEntry {
+  id          String   @id @default(uuid())
+  timesheetId String
+  taskId      String
+  projectId   String
+  monday      Float    @default(0)
+  tuesday     Float    @default(0)
+  wednesday   Float    @default(0)
+  thursday    Float    @default(0)
+  friday      Float    @default(0)
+  saturday    Float    @default(0)
+  sunday      Float    @default(0)
+  totalHours  Float    @default(0)
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  timesheet Timesheet @relation(fields: [timesheetId], references: [id], onDelete: Cascade)
+  task      Task      @relation(fields: [taskId], references: [id])
+  project   Project   @relation(fields: [projectId], references: [id])
+
+  @@index([timesheetId])
+  @@index([taskId])
+  @@index([projectId])
+  @@map("timesheet_entries")
+}
+
+// ============================================================
+// ATTENDANCE
+// ============================================================
+
+model Attendance {
+  id          String           @id @default(uuid())
+  employeeId  String
+  date        DateTime         @db.Date
+  checkIn     DateTime?
+  checkOut    DateTime?
+  workedHours Float            @default(0)
+  status      AttendanceStatus @default(PRESENT)
+  notes       String?          @db.Text
+  isManual    Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+
+  @@unique([employeeId, date])
+  @@index([employeeId])
+  @@index([date])
+  @@index([status])
+  @@map("attendance")
+}
+
+// ============================================================
+// NOTIFICATIONS
+// ============================================================
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String           @db.VarChar(255)
+  message   String           @db.Text
+  isRead    Boolean          @default(false)
+  readAt    DateTime?
+  actionUrl String?          @db.VarChar(500)
+  metadata  Json?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+// ============================================================
+// AUDIT LOGS
+// ============================================================
+
+model AuditLog {
+  id          String      @id @default(uuid())
+  userId      String?
+  action      AuditAction
+  entityType  String      @db.VarChar(50)
+  entityId    String      @db.VarChar(50)
+  description String      @db.Text
+  beforeData  Json?
+  afterData   Json?
+  ipAddress   String?     @db.VarChar(45)
+  userAgent   String?     @db.VarChar(500)
+  createdAt   DateTime    @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// ============================================================
+// ACTIVITY LOGS (For Dashboard Feed)
+// ============================================================
+
+model ActivityLog {
+  id          String   @id @default(uuid())
+  userId      String
+  entityType  String   @db.VarChar(50)
+  entityId    String   @db.VarChar(50)
+  entityName  String   @db.VarChar(255)
+  action      String   @db.VarChar(100)
+  description String   @db.Text
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([entityType])
+  @@index([createdAt])
+  @@map("activity_logs")
+}
+
+// ============================================================
+// SETTINGS
+// ============================================================
+
+model SystemSetting {
+  id        String   @id @default(uuid())
+  key       String   @unique @db.VarChar(100)
+  value     String   @db.Text
+  type      String   @default("string") @db.VarChar(20)
+  category  String   @default("general") @db.VarChar(50)
+  label     String   @db.VarChar(200)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([key])
+  @@index([category])
+  @@map("system_settings")
+}
