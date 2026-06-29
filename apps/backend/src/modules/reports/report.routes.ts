@@ -81,8 +81,8 @@ router.get('/project-progress', asyncHandler(async (_req: Request, res: Response
   const data = projects.map(p => ({
     projectCode: p.projectCode,
     projectName: p.name,
-    department: p.department.name,
-    projectManager: `${p.projectManager.firstName} ${p.projectManager.lastName}`,
+    department: p.department?.name || 'N/A',
+    projectManager: p.projectManager ? `${p.projectManager.firstName} ${p.projectManager.lastName}` : 'Unassigned',
     status: p.status,
     priority: p.priority,
     startDate: p.startDate,

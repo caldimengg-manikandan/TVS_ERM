@@ -29,6 +29,11 @@ enum ProjectStatus {
   YET_TO_START
   ACTIVE
   INACTIVE
+  COMPLETED
+  CANCELLED
+  PLANNING
+  ON_HOLD
+  ARCHIVED
 }
 
 enum ProjectPriority {

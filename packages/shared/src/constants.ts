@@ -13,7 +13,12 @@ export enum UserRole {
 export enum ProjectStatus {
   YET_TO_START = 'YET_TO_START',
   ACTIVE = 'ACTIVE',
-  INACTIVE = 'INACTIVE'
+  INACTIVE = 'INACTIVE',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED',
+  PLANNING = 'PLANNING',
+  ON_HOLD = 'ON_HOLD',
+  ARCHIVED = 'ARCHIVED'
 }
 
 export enum ProjectPriority {

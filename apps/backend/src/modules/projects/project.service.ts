@@ -2,7 +2,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../../config/database';
 import { redisCache } from '../../config/redis';
 import { buildPaginationResult, getPaginationParams } from '../../utils/response';
-import { CreateProjectInput, UpdateProjectInput } from '../../../../../packages/shared/src/schemas';
+import { CreateProjectInput, UpdateProjectInput } from '@tvs/shared';
 
 export class ProjectService {
   async getAll(params: {
