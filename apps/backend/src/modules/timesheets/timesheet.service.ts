@@ -302,6 +302,68 @@ export class TimesheetService {
       });
     }
   }
+
+  async getPerformanceSummary() {
+    const { subWeeks } = require('date-fns');
+    const twelveWeeksAgo = subWeeks(new Date(), 12);
+    
+    const timesheets = await prisma.timesheet.findMany({
+      where: {
+        weekStartDate: { gte: twelveWeeksAgo }
+      },
+      include: {
+        employee: {
+          select: { id: true, firstName: true, lastName: true, email: true, employeeId: true }
+        }
+      }
+    });
+
+    const employeeMap = new Map();
+
+    for (const ts of timesheets) {
+      if (!employeeMap.has(ts.employeeId)) {
+        employeeMap.set(ts.employeeId, {
+          employee: ts.employee,
+          totalActualHours: 0,
+          totalPlannedHours: 0
+        });
+      }
+      const data = employeeMap.get(ts.employeeId);
+      data.totalActualHours += ts.totalHours;
+      data.totalPlannedHours += ts.plannedHours;
+    }
+
+    const worstPerformers: any[] = [];
+    const bestPerformers: any[] = [];
+
+    for (const data of employeeMap.values()) {
+      const difference = data.totalActualHours - data.totalPlannedHours;
+      const row = {
+        employee: data.employee,
+        allocatedHours: data.totalPlannedHours,
+        actualHours: data.totalActualHours,
+        difference: Math.abs(difference)
+      };
+
+      if (difference > 0) {
+        // Extra hours taken
+        worstPerformers.push(row);
+      } else if (difference < 0) {
+        // Fast working
+        bestPerformers.push(row);
+      }
+    }
+
+    worstPerformers.sort((a, b) => b.difference - a.difference);
+    bestPerformers.sort((a, b) => b.difference - a.difference);
+    
+    const allEmployees = Array.from(employeeMap.values()).map(data => ({
+      employee: data.employee,
+      actualHours: data.totalActualHours
+    })).sort((a, b) => b.actualHours - a.actualHours);
+
+    return { allEmployees, worstPerformers, bestPerformers };
+  }
 }
 
 export const timesheetService = new TimesheetService();

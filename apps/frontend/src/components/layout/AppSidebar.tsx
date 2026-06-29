@@ -34,6 +34,7 @@ const NAV_ITEMS: (NavItem | { section: string })[] = [
   
   { section: 'Time & Attendance' },
   { label: 'Timesheets', icon: Clock, href: '/timesheets' },
+  { label: 'Timesheet Summary', icon: TrendingUp, href: '/timesheets/summary' },
   { label: 'TL Approvals', icon: UserCheck, href: '/timesheets/approvals', roles: [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TEAM_LEAD, UserRole.PROJECT_MANAGER] },
   { label: 'Attendance', icon: Calendar, href: '/attendance' },
   

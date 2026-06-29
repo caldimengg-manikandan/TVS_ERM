@@ -87,4 +87,10 @@ router.get('/summary', asyncHandler(async (req: Request, res: Response) => {
   sendSuccess(res, summary, 'Timesheet summary retrieved');
 }));
 
+// GET /api/timesheets/summary/performance - Get extra hours and fast working data
+router.get('/summary/performance', asyncHandler(async (req: Request, res: Response) => {
+  const result = await timesheetService.getPerformanceSummary();
+  sendSuccess(res, result, 'Performance summary retrieved');
+}));
+
 export default router;

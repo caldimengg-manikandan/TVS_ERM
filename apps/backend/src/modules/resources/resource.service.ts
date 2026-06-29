@@ -174,11 +174,24 @@ export class ResourceService {
   }
 
   async getEmployeeAllocations(employeeId: string) {
-    return prisma.resourceAllocation.findMany({
+    const allocations = await prisma.resourceAllocation.findMany({
       where: { employeeId, status: 'ACTIVE' },
       include: { project: { select: { id: true, projectCode: true, name: true, status: true, endDate: true, completionPercentage: true, plannedHours: true } } },
       orderBy: { startDate: 'asc' },
     });
+
+    for (const alloc of allocations) {
+      const timesheetEntries = await prisma.timesheetEntry.aggregate({
+        _sum: { totalHours: true },
+        where: {
+          projectId: alloc.projectId,
+          timesheet: { employeeId: employeeId }
+        }
+      });
+      (alloc as any).actualHours = timesheetEntries._sum.totalHours || 0;
+    }
+
+    return allocations;
   }
 
   async getProjectAllocations(projectId: string) {

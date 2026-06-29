@@ -23,6 +23,7 @@ const EmployeeDetailPage = lazy(() => import('./pages/employees/EmployeeDetailPa
 const ResourceAllocationPage = lazy(() => import('./pages/resources/ResourceAllocationPage'));
 const CapacityPlanningPage = lazy(() => import('./pages/capacity/CapacityPlanningPage'));
 const TimesheetPage = lazy(() => import('./pages/timesheets/TimesheetPage'));
+const TimesheetSummaryPage = lazy(() => import('./pages/timesheets/TimesheetSummaryPage'));
 const TimesheetApprovalsPage = lazy(() => import('./pages/timesheets/TimesheetApprovalsPage'));
 const AttendancePage = lazy(() => import('./pages/attendance/AttendancePage'));
 const TasksPage = lazy(() => import('./pages/tasks/TasksPage'));
@@ -79,6 +80,7 @@ function App() {
 
                     {/* Timesheets */}
                     <Route path="/timesheets" element={<TimesheetPage />} />
+                    <Route path="/timesheets/summary" element={<TimesheetSummaryPage />} />
                     <Route path="/timesheets/approvals" element={<TimesheetApprovalsPage />} />
 
                     {/* Other modules */}

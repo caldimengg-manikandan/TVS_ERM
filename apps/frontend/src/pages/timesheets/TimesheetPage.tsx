@@ -71,7 +71,7 @@ const TimesheetPage: React.FC = () => {
   // Query all tasks for selectors
   const { data: tasksRes } = useQuery({
     queryKey: ['all-tasks'],
-    queryFn: () => tasksApi.getAll({ limit: 300 }),
+    queryFn: () => tasksApi.getAll({ limit: 100 }),
   });
   const allTasks = tasksRes?.data?.data?.data || [];
 

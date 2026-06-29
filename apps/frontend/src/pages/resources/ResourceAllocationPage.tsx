@@ -280,6 +280,8 @@ const ExpandableResourceRow = ({ row, statusStyle, selectedMonth, selectedYear }
                         <tr>
                           <th className="px-4 py-3 font-bold">Project</th>
                           <th className="px-4 py-3 font-bold text-center">Allocated Time</th>
+                          <th className="px-4 py-3 font-bold text-center">Actual Time</th>
+                          <th className="px-4 py-3 font-bold text-center">Variance</th>
                           <th className="px-4 py-3 font-bold text-center">Deadline</th>
                           <th className="px-4 py-3 font-bold text-center">Progress / Balance</th>
                           <th className="w-12 text-center" />
@@ -291,6 +293,8 @@ const ExpandableResourceRow = ({ row, statusStyle, selectedMonth, selectedYear }
                           const approxDays = (alloc.allocatedHours / 8).toFixed(1);
                           const compPercent = alloc.project.completionPercentage || 0;
                           const balanceWorkPercent = Math.max(0, 100 - compPercent).toFixed(1);
+                          const actual = alloc.actualHours || 0;
+                          const variance = actual - alloc.allocatedHours;
 
                           return (
                             <tr key={alloc.id} className="hover:bg-muted/20 transition-colors">
@@ -301,6 +305,24 @@ const ExpandableResourceRow = ({ row, statusStyle, selectedMonth, selectedYear }
                               <td className="px-4 py-3 text-center">
                                 <div className="text-sm font-black text-accent">{alloc.allocatedHours} h</div>
                                 <div className="text-xs text-muted-foreground">~ {approxDays} days</div>
+                              </td>
+                              <td className="px-4 py-3 text-center">
+                                <div className="text-sm font-black text-primary">{actual} h</div>
+                              </td>
+                              <td className="px-4 py-3 text-center">
+                                {variance > 0 ? (
+                                  <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-danger/10 text-danger border border-danger/20">
+                                    +{variance}h Delay
+                                  </span>
+                                ) : variance < 0 ? (
+                                  <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-success/10 text-success border border-success/20">
+                                    {variance}h Early
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-muted text-muted-foreground">
+                                    On Track
+                                  </span>
+                                )}
                               </td>
                               <td className="px-4 py-3 text-center">
                                 <div className="font-semibold text-primary text-sm">
