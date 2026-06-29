@@ -290,11 +290,15 @@ const ExpandableResourceRow = ({ row, statusStyle, selectedMonth, selectedYear }
                       <tbody className="divide-y divide-border">
                         {allocations.map((alloc: any) => {
                           const daysRemaining = differenceInDays(new Date(alloc.project.endDate), new Date());
-                          const approxDays = (alloc.allocatedHours / 8).toFixed(1);
+                          const allocatedDays = (alloc.allocatedHours / 8).toFixed(1);
+                          const actualHours = alloc.actualHours || 0;
+                          const actualDays = (actualHours / 8).toFixed(1);
                           const compPercent = alloc.project.completionPercentage || 0;
                           const balanceWorkPercent = Math.max(0, 100 - compPercent).toFixed(1);
-                          const actual = alloc.actualHours || 0;
-                          const variance = actual - alloc.allocatedHours;
+                          
+                          const varianceHours = actualHours - alloc.allocatedHours;
+                          const varianceDays = (varianceHours / 8).toFixed(1);
+                          const efficiency = actualHours > 0 ? ((alloc.allocatedHours / actualHours) * 100).toFixed(0) : 0;
 
                           return (
                             <tr key={alloc.id} className="hover:bg-muted/20 transition-colors">
@@ -304,25 +308,39 @@ const ExpandableResourceRow = ({ row, statusStyle, selectedMonth, selectedYear }
                               </td>
                               <td className="px-4 py-3 text-center">
                                 <div className="text-sm font-black text-accent">{alloc.allocatedHours} h</div>
-                                <div className="text-xs text-muted-foreground">~ {approxDays} days</div>
+                                <div className="text-xs text-muted-foreground font-medium">{allocatedDays} Days</div>
                               </td>
                               <td className="px-4 py-3 text-center">
-                                <div className="text-sm font-black text-primary">{actual} h</div>
+                                <div className="text-sm font-black text-primary">{actualHours} h</div>
+                                <div className="text-xs text-muted-foreground font-medium">{actualDays} Days</div>
                               </td>
                               <td className="px-4 py-3 text-center">
-                                {variance > 0 ? (
-                                  <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-danger/10 text-danger border border-danger/20">
-                                    +{variance}h Delay
-                                  </span>
-                                ) : variance < 0 ? (
-                                  <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-success/10 text-success border border-success/20">
-                                    {variance}h Early
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-muted text-muted-foreground">
-                                    On Track
-                                  </span>
-                                )}
+                                <div className="flex flex-col items-center gap-1">
+                                  {varianceHours > 0 ? (
+                                    <>
+                                      <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-danger/10 text-danger border border-danger/20 shadow-sm" title={`${varianceHours} hours delayed`}>
+                                        {Math.abs(Number(varianceDays))} Days Delayed
+                                      </span>
+                                      <span className="text-3xs text-danger font-semibold">+{varianceHours}h overrun</span>
+                                    </>
+                                  ) : varianceHours < 0 ? (
+                                    <>
+                                      <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-success/10 text-success border border-success/20 shadow-sm" title={`${Math.abs(varianceHours)} hours early`}>
+                                        {Math.abs(Number(varianceDays))} Days Early
+                                      </span>
+                                      <span className="text-3xs text-success font-semibold">{varianceHours}h saved</span>
+                                    </>
+                                  ) : (
+                                    <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-muted text-muted-foreground border border-border">
+                                      On Track
+                                    </span>
+                                  )}
+                                  {actualHours > 0 && varianceHours !== 0 && (
+                                    <span className="text-4xs uppercase tracking-wider text-muted-foreground font-bold mt-0.5">
+                                      {efficiency}% Efficiency
+                                    </span>
+                                  )}
+                                </div>
                               </td>
                               <td className="px-4 py-3 text-center">
                                 <div className="font-semibold text-primary text-sm">
