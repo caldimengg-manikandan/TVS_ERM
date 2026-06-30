@@ -259,8 +259,11 @@ model Project {
   clientName           String?         @db.VarChar(200)
   businessUnit         String?         @db.VarChar(100)
   projectType          String?         @db.VarChar(50)
-  location             String?         @db.VarChar(100)
+  description          String?         @db.Text
   departmentId         String?
+  projectManagerId     String?
+  budget               Float?
+  priority             ProjectPriority @default(MEDIUM)
   status               ProjectStatus   @default(YET_TO_START)
   startDate            DateTime        @db.Date
   endDate              DateTime        @db.Date

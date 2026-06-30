@@ -131,8 +131,8 @@ const ProjectDetailPage: React.FC = () => {
               <span className={`status-badge ${STATUS_STYLES[project.status] || ''}`}>
                 {project.status.replace('_', ' ')}
               </span>
-              <span className={`status-badge priority-${project.priority.toLowerCase()}`}>
-                {project.priority}
+              <span className={`status-badge priority-${project.priority?.toLowerCase() || 'medium'}`}>
+                {project.priority || 'MEDIUM'}
               </span>
               {project.isDelayed && (
                 <span className="status-badge bg-danger/10 text-danger flex items-center gap-1">

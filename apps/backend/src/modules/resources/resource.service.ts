@@ -181,14 +181,31 @@ export class ResourceService {
     });
 
     for (const alloc of allocations) {
-      const timesheetEntries = await prisma.timesheetEntry.aggregate({
-        _sum: { totalHours: true },
+      const timesheetStats = await prisma.timesheetEntry.findMany({
         where: {
           projectId: alloc.projectId,
           timesheet: { employeeId: employeeId }
+        },
+        include: {
+          timesheet: {
+            select: { weekStartDate: true, weekEndDate: true }
+          }
+        },
+        orderBy: {
+          timesheet: { weekStartDate: 'asc' }
         }
       });
-      (alloc as any).actualHours = timesheetEntries._sum.totalHours || 0;
+
+      const actualHours = timesheetStats.reduce((sum, entry) => sum + (entry.totalHours || 0), 0);
+      (alloc as any).actualHours = actualHours;
+      
+      if (timesheetStats.length > 0) {
+        (alloc as any).actualStartDate = timesheetStats[0].timesheet.weekStartDate;
+        (alloc as any).actualEndDate = timesheetStats[timesheetStats.length - 1].timesheet.weekEndDate;
+      } else {
+        (alloc as any).actualStartDate = null;
+        (alloc as any).actualEndDate = null;
+      }
     }
 
     return allocations;

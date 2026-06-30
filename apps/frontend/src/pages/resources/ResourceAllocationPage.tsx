@@ -290,14 +290,23 @@ const ExpandableResourceRow = ({ row, statusStyle, selectedMonth, selectedYear }
                       <tbody className="divide-y divide-border">
                         {allocations.map((alloc: any) => {
                           const daysRemaining = differenceInDays(new Date(alloc.project.endDate), new Date());
-                          const allocatedDays = (alloc.allocatedHours / 8).toFixed(1);
+                          const allocatedDaysNum = differenceInDays(new Date(alloc.endDate), new Date(alloc.startDate)) + 1;
+                          const allocatedDays = allocatedDaysNum.toFixed(1);
+                          
                           const actualHours = alloc.actualHours || 0;
-                          const actualDays = (actualHours / 8).toFixed(1);
+                          let actualDaysNum = 0;
+                          if (alloc.actualStartDate && alloc.actualEndDate) {
+                            actualDaysNum = differenceInDays(new Date(alloc.actualEndDate), new Date(alloc.actualStartDate)) + 1;
+                          } else if (actualHours > 0) {
+                            actualDaysNum = actualHours / 8; // fallback
+                          }
+                          const actualDays = actualDaysNum.toFixed(1);
+                          
                           const compPercent = alloc.project.completionPercentage || 0;
                           const balanceWorkPercent = Math.max(0, 100 - compPercent).toFixed(1);
                           
                           const varianceHours = actualHours - alloc.allocatedHours;
-                          const varianceDays = (varianceHours / 8).toFixed(1);
+                          const varianceDaysNum = actualDaysNum - allocatedDaysNum;
                           const efficiency = actualHours > 0 ? ((alloc.allocatedHours / actualHours) * 100).toFixed(0) : 0;
 
                           return (
@@ -316,26 +325,27 @@ const ExpandableResourceRow = ({ row, statusStyle, selectedMonth, selectedYear }
                               </td>
                               <td className="px-4 py-3 text-center">
                                 <div className="flex flex-col items-center gap-1">
-                                  {varianceHours > 0 ? (
-                                    <>
-                                      <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-danger/10 text-danger border border-danger/20 shadow-sm" title={`${varianceHours} hours delayed`}>
-                                        {Math.abs(Number(varianceDays))} Days Delayed
-                                      </span>
-                                      <span className="text-3xs text-danger font-semibold">+{varianceHours}h overrun</span>
-                                    </>
-                                  ) : varianceHours < 0 ? (
-                                    <>
-                                      <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-success/10 text-success border border-success/20 shadow-sm" title={`${Math.abs(varianceHours)} hours early`}>
-                                        {Math.abs(Number(varianceDays))} Days Early
-                                      </span>
-                                      <span className="text-3xs text-success font-semibold">{varianceHours}h saved</span>
-                                    </>
+                                  {varianceDaysNum > 0 ? (
+                                    <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-danger/10 text-danger border border-danger/20 shadow-sm" title={`${varianceDaysNum.toFixed(1)} days delayed`}>
+                                      {varianceDaysNum.toFixed(1)} Days Delayed
+                                    </span>
+                                  ) : varianceDaysNum < 0 ? (
+                                    <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-success/10 text-success border border-success/20 shadow-sm" title={`${Math.abs(varianceDaysNum).toFixed(1)} days early`}>
+                                      {Math.abs(varianceDaysNum).toFixed(1)} Days Early
+                                    </span>
                                   ) : (
                                     <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-muted text-muted-foreground border border-border">
-                                      On Track
+                                      On Track (Days)
                                     </span>
                                   )}
-                                  {actualHours > 0 && varianceHours !== 0 && (
+
+                                  {varianceHours > 0 ? (
+                                    <span className="text-3xs text-danger font-semibold">+{varianceHours}h overrun</span>
+                                  ) : varianceHours < 0 ? (
+                                    <span className="text-3xs text-success font-semibold">{Math.abs(varianceHours)}h saved</span>
+                                  ) : null}
+
+                                  {actualHours > 0 && (
                                     <span className="text-4xs uppercase tracking-wider text-muted-foreground font-bold mt-0.5">
                                       {efficiency}% Efficiency
                                     </span>
