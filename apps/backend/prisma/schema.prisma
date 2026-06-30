@@ -239,6 +239,7 @@ model Employee {
   attendance        Attendance[]
   taskAssignments   Task[]
   capacityPlans     CapacityPlan[]
+  managedProjects   Project[]      @relation("ProjectManager")
 
   @@index([employeeId])
   @@index([email])
@@ -278,6 +279,7 @@ model Project {
 
   // Relations
   department      Department?     @relation(fields: [departmentId], references: [id])
+  projectManager  Employee?       @relation("ProjectManager", fields: [projectManagerId], references: [id])
 
   members         ProjectMember[]
   milestones      Milestone[]

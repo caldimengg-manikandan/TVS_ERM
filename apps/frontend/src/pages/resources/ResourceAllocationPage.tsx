@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  Users, TrendingUp, AlertTriangle, CheckCircle, Search,
+  Users, TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Search,
   Filter, ChevronLeft, ChevronRight, BarChart3, Download,
   ChevronDown, ChevronUp, Calendar, Clock, CheckSquare, Plus, Eye, Info, Trash2
 } from 'lucide-react';
@@ -25,7 +25,7 @@ const ExpandableResourceRow = ({ row, statusStyle, selectedMonth, selectedYear }
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'day' | 'week' | 'month' | 'year'>('week');
   const navigate = useNavigate();
-  
+
   const { data: allocData, isLoading } = useQuery({
     queryKey: ['employee-allocations', row.employeeDbId],
     queryFn: () => resourcesApi.getEmployeeAllocations(row.employeeDbId),
@@ -60,7 +60,7 @@ const ExpandableResourceRow = ({ row, statusStyle, selectedMonth, selectedYear }
       toast.error('No allocations to download');
       return;
     }
-    
+
     const headers = ['Project Name', 'Project Code', 'Allocated Hours', 'Start Date', 'End Date', 'Progress (%)'];
     const csvContent = [
       headers.join(','),
@@ -120,7 +120,7 @@ const ExpandableResourceRow = ({ row, statusStyle, selectedMonth, selectedYear }
       timelineUnits = Array.from({ length: 5 }).map((_, i) => {
         return new Date(selectedYear + (i - 2), 0, 1);
       });
-      getHeaderName = () => `${timelineUnits[0].getFullYear()} - ${timelineUnits[timelineUnits.length-1].getFullYear()}`;
+      getHeaderName = () => `${timelineUnits[0].getFullYear()} - ${timelineUnits[timelineUnits.length - 1].getFullYear()}`;
       subHeaderFormat = 'yyyy';
       getUnitEnd = (d) => { const nd = new Date(d); nd.setFullYear(nd.getFullYear() + 1); return nd; };
       break;
@@ -167,8 +167,8 @@ const ExpandableResourceRow = ({ row, statusStyle, selectedMonth, selectedYear }
 
   return (
     <>
-      <motion.tr 
-        initial={{ opacity: 0 }} 
+      <motion.tr
+        initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         className={`hover:bg-muted/30 transition-colors cursor-pointer ${expanded ? 'bg-muted/30' : ''}`}
         onClick={() => setExpanded(!expanded)}
@@ -207,17 +207,15 @@ const ExpandableResourceRow = ({ row, statusStyle, selectedMonth, selectedYear }
           <div className="flex items-center gap-2 justify-center">
             <div className="util-bar w-16">
               <div
-                className={`util-bar-fill ${
-                  row.utilizationPercent > 100 ? 'bg-danger' :
-                  row.utilizationPercent > 80 ? 'bg-warning' : 'bg-success'
-                }`}
+                className={`util-bar-fill ${row.utilizationPercent > 100 ? 'bg-danger' :
+                    row.utilizationPercent > 80 ? 'bg-warning' : 'bg-success'
+                  }`}
                 style={{ width: `${Math.min(100, row.utilizationPercent)}%` }}
               />
             </div>
-            <span className={`text-xs font-bold w-9 ${
-              row.utilizationPercent > 100 ? 'text-danger' :
-              row.utilizationPercent > 80 ? 'text-warning' : 'text-success'
-            }`}>{row.utilizationPercent}%</span>
+            <span className={`text-xs font-bold w-9 ${row.utilizationPercent > 100 ? 'text-danger' :
+                row.utilizationPercent > 80 ? 'text-warning' : 'text-success'
+              }`}>{row.utilizationPercent}%</span>
           </div>
         </td>
         <td className="text-center">
@@ -227,12 +225,12 @@ const ExpandableResourceRow = ({ row, statusStyle, selectedMonth, selectedYear }
           </span>
         </td>
       </motion.tr>
-      
+
       {/* Expanded Breakdown Row */}
       {expanded && (
         <tr className="bg-muted/10 border-b border-border">
           <td colSpan={10} className="p-0">
-            <motion.div 
+            <motion.div
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
@@ -246,13 +244,13 @@ const ExpandableResourceRow = ({ row, statusStyle, selectedMonth, selectedYear }
                     <span className="text-3xs font-semibold px-2 py-0.5 bg-accent/10 border border-accent/25 rounded text-accent">Table View</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button 
+                    <button
                       onClick={handleDownload}
                       className="flex items-center gap-1 bg-white border border-border hover:bg-muted text-primary px-3 py-1.5 rounded-md text-xs font-semibold shadow-sm transition-all"
                     >
                       <Download className="w-3.5 h-3.5" /> Download
                     </button>
-                    <button 
+                    <button
                       onClick={(e) => { e.stopPropagation(); setIsModalOpen(true); }}
                       className="flex items-center gap-1.5 text-xs font-semibold text-white bg-accent hover:bg-accent/90 px-4 py-1.5 rounded-md shadow-sm transition-colors"
                     >
@@ -266,7 +264,7 @@ const ExpandableResourceRow = ({ row, statusStyle, selectedMonth, selectedYear }
                 ) : allocations.length === 0 ? (
                   <div className="text-center py-6 bg-white border border-border rounded-lg shadow-sm">
                     <p className="text-sm text-muted-foreground">No active project allocations found.</p>
-                    <button 
+                    <button
                       onClick={(e) => { e.stopPropagation(); setIsModalOpen(true); }}
                       className="mt-3 text-sm text-accent hover:underline"
                     >
@@ -278,13 +276,14 @@ const ExpandableResourceRow = ({ row, statusStyle, selectedMonth, selectedYear }
                     <table className="w-full text-left">
                       <thead className="bg-muted/30 text-xs text-muted-foreground uppercase tracking-wider border-b border-border">
                         <tr>
-                          <th className="px-4 py-3 font-bold">Project</th>
-                          <th className="px-4 py-3 font-bold text-center">Allocated Time</th>
-                          <th className="px-4 py-3 font-bold text-center">Actual Time</th>
-                          <th className="px-4 py-3 font-bold text-center">Variance</th>
-                          <th className="px-4 py-3 font-bold text-center">Deadline</th>
-                          <th className="px-4 py-3 font-bold text-center">Progress / Balance</th>
-                          <th className="w-12 text-center" />
+                          <th className="px-4 py-3 font-bold w-[25%] text-left">Project</th>
+                          <th className="px-4 py-3 font-bold text-left w-[12%]">Allocated Time</th>
+                          <th className="px-4 py-3 font-bold text-left w-[12%]">Actual Time</th>
+                          <th className="px-4 py-3 font-bold text-left w-[14%]">Variance</th>
+                          <th className="px-4 py-3 font-bold text-left w-[10%]">Efficiency</th>
+                          <th className="px-4 py-3 font-bold text-left w-[12%]">Deadline</th>
+                          <th className="px-4 py-3 font-bold text-left w-[15%]">Progress / Balance</th>
+                          <th className="w-8 text-center" />
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border">
@@ -292,7 +291,7 @@ const ExpandableResourceRow = ({ row, statusStyle, selectedMonth, selectedYear }
                           const daysRemaining = differenceInDays(new Date(alloc.project.endDate), new Date());
                           const allocatedDaysNum = differenceInDays(new Date(alloc.endDate), new Date(alloc.startDate)) + 1;
                           const allocatedDays = allocatedDaysNum.toFixed(1);
-                          
+
                           const actualHours = alloc.actualHours || 0;
                           let actualDaysNum = 0;
                           if (alloc.actualStartDate && alloc.actualEndDate) {
@@ -301,10 +300,10 @@ const ExpandableResourceRow = ({ row, statusStyle, selectedMonth, selectedYear }
                             actualDaysNum = actualHours / 8; // fallback
                           }
                           const actualDays = actualDaysNum.toFixed(1);
-                          
+
                           const compPercent = alloc.project.completionPercentage || 0;
                           const balanceWorkPercent = Math.max(0, 100 - compPercent).toFixed(1);
-                          
+
                           const varianceHours = actualHours - alloc.allocatedHours;
                           const varianceDaysNum = actualDaysNum - allocatedDaysNum;
                           const efficiency = actualHours > 0 ? ((alloc.allocatedHours / actualHours) * 100).toFixed(0) : 0;
@@ -315,44 +314,43 @@ const ExpandableResourceRow = ({ row, statusStyle, selectedMonth, selectedYear }
                                 <div className="font-bold text-primary text-sm">{alloc.project.name}</div>
                                 <div className="text-xs text-muted-foreground">{alloc.project.projectCode}</div>
                               </td>
-                              <td className="px-4 py-3 text-center">
+                              <td className="px-4 py-3 text-left">
                                 <div className="text-sm font-black text-accent">{alloc.allocatedHours} h</div>
                                 <div className="text-xs text-muted-foreground font-medium">{allocatedDays} Days</div>
                               </td>
-                              <td className="px-4 py-3 text-center">
+                              <td className="px-4 py-3 text-left">
                                 <div className="text-sm font-black text-primary">{actualHours} h</div>
                                 <div className="text-xs text-muted-foreground font-medium">{actualDays} Days</div>
                               </td>
-                              <td className="px-4 py-3 text-center">
-                                <div className="flex flex-col items-center gap-1">
-                                  {varianceDaysNum > 0 ? (
-                                    <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-danger/10 text-danger border border-danger/20 shadow-sm" title={`${varianceDaysNum.toFixed(1)} days delayed`}>
-                                      {varianceDaysNum.toFixed(1)} Days Delayed
-                                    </span>
-                                  ) : varianceDaysNum < 0 ? (
-                                    <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-success/10 text-success border border-success/20 shadow-sm" title={`${Math.abs(varianceDaysNum).toFixed(1)} days early`}>
-                                      {Math.abs(varianceDaysNum).toFixed(1)} Days Early
+                              <td className="px-4 py-3 text-left">
+                                <div className="flex flex-col items-start gap-1">
+                                  {varianceDaysNum === 0 && varianceHours === 0 ? (
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-muted text-muted-foreground border border-border">
+                                      On Track
                                     </span>
                                   ) : (
-                                    <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-muted text-muted-foreground border border-border">
-                                      On Track (Days)
-                                    </span>
-                                  )}
-
-                                  {varianceHours > 0 ? (
-                                    <span className="text-3xs text-danger font-semibold">+{varianceHours}h overrun</span>
-                                  ) : varianceHours < 0 ? (
-                                    <span className="text-3xs text-success font-semibold">{Math.abs(varianceHours)}h saved</span>
-                                  ) : null}
-
-                                  {actualHours > 0 && (
-                                    <span className="text-4xs uppercase tracking-wider text-muted-foreground font-bold mt-0.5">
-                                      {efficiency}% Efficiency
+                                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${varianceDaysNum > 0 || varianceHours > 0 ? 'bg-danger/10 text-danger border border-danger/20' : 'bg-success/10 text-success border border-success/20'} shadow-sm`}>
+                                      {varianceDaysNum > 0 || varianceHours > 0 ? (
+                                        <><TrendingUp className="w-3 h-3 mr-1" /> {varianceDaysNum > 0 ? `${varianceDaysNum.toFixed(1)}d Delay` : `+${varianceHours}h Overrun`}</>
+                                      ) : (
+                                        <><TrendingDown className="w-3 h-3 mr-1" /> {varianceDaysNum < 0 ? `${Math.abs(varianceDaysNum).toFixed(1)}d Early` : `${Math.abs(varianceHours)}h Saved`}</>
+                                      )}
                                     </span>
                                   )}
                                 </div>
                               </td>
-                              <td className="px-4 py-3 text-center">
+                              <td className="px-4 py-3 text-left">
+                                {actualHours > 0 ? (
+                                  <div className="flex flex-col items-start justify-center">
+                                    <span className={`text-sm font-black ${Number(efficiency) >= 100 ? 'text-success' : 'text-danger'}`}>
+                                      {efficiency}%
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">N/A</span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-left">
                                 <div className="font-semibold text-primary text-sm">
                                   {format(new Date(alloc.project.endDate), 'MMM dd, yyyy')}
                                 </div>
@@ -360,21 +358,21 @@ const ExpandableResourceRow = ({ row, statusStyle, selectedMonth, selectedYear }
                                   {daysRemaining < 0 ? `${Math.abs(daysRemaining)} days overdue` : `${daysRemaining} days left`}
                                 </div>
                               </td>
-                              <td className="px-4 py-3 text-center">
-                                <div className="flex items-center gap-2 justify-center mb-1">
-                                  <div className="util-bar w-24 h-2">
-                                    <div 
+                              <td className="px-4 py-3 text-left">
+                                <div className="flex items-center gap-2 justify-start mb-1">
+                                  <div className="util-bar w-20 h-2">
+                                    <div
                                       className="util-bar-fill bg-success"
-                                      style={{ width: `${compPercent}%` }} 
+                                      style={{ width: `${compPercent}%` }}
                                     />
                                   </div>
                                   <span className="text-xs font-black text-success w-10 text-left">{compPercent}%</span>
                                 </div>
-                                <div className="text-xs text-muted-foreground">
-                                  Balance Work: <span className="font-semibold">{balanceWorkPercent}%</span>
+                                <div className="text-4xs text-muted-foreground uppercase tracking-wider font-semibold">
+                                  Balance Work: {balanceWorkPercent}%
                                 </div>
                               </td>
-                              <td className="px-4 py-3 text-center">
+                              <td className="px-2 py-3 text-center">
                                 <div className="flex items-center gap-1.5 justify-center">
                                   <button
                                     onClick={(e) => { e.stopPropagation(); navigate(`/projects/${alloc.project.id}`); }}
@@ -414,11 +412,10 @@ const ExpandableResourceRow = ({ row, statusStyle, selectedMonth, selectedYear }
                         <button
                           key={mode}
                           onClick={() => setViewMode(mode)}
-                          className={`px-3 py-1 text-xs font-semibold rounded capitalize transition-all ${
-                            viewMode === mode 
-                              ? 'bg-white shadow-sm text-accent' 
+                          className={`px-3 py-1 text-xs font-semibold rounded capitalize transition-all ${viewMode === mode
+                              ? 'bg-white shadow-sm text-accent'
                               : 'text-muted-foreground hover:text-primary'
-                          }`}
+                            }`}
                         >
                           {mode}
                         </button>
@@ -456,8 +453,8 @@ const ExpandableResourceRow = ({ row, statusStyle, selectedMonth, selectedYear }
                       <div className="divide-y divide-border/60 relative">
                         {/* Dynamic Today Red Dotted Line */}
                         {showTodayLine && (
-                          <div 
-                            style={{ left: `calc(25% + (75% * ${todayLeft / 100}))` }} 
+                          <div
+                            style={{ left: `calc(25% + (75% * ${todayLeft / 100}))` }}
                             className="absolute top-0 bottom-0 border-l-2 border-dashed border-danger/60 z-30"
                           >
                             <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-4xs bg-danger text-white px-1 py-0.5 rounded font-bold uppercase tracking-wider">
@@ -468,10 +465,10 @@ const ExpandableResourceRow = ({ row, statusStyle, selectedMonth, selectedYear }
 
                         {allocations.map((alloc: any, idx) => {
                           const { left, width } = getBarPosition(alloc.startDate, alloc.endDate);
-                          const barColors = idx === 0 
-                            ? 'bg-accent/15 border border-accent/35 text-accent font-bold' 
+                          const barColors = idx === 0
+                            ? 'bg-accent/15 border border-accent/35 text-accent font-bold'
                             : 'bg-success/15 border border-success/35 text-success font-bold';
-                          
+
                           return (
                             <div key={alloc.id} className="flex hover:bg-muted/10 transition-colors items-center">
                               <div className="w-1/4 px-4 py-3.5 border-r border-border">
@@ -571,7 +568,7 @@ const ExpandableResourceRow = ({ row, statusStyle, selectedMonth, selectedYear }
       )}
 
       {/* Render Modal */}
-      <AllocateResourceModal 
+      <AllocateResourceModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         employeeDbId={row.employeeDbId}
@@ -616,7 +613,7 @@ const ResourceAllocationPage: React.FC = () => {
       toast.error('No data to export');
       return;
     }
-    
+
     const headers = ['S.No', 'Employee Name', 'Employee ID', 'Role', 'Department', 'Current Project', 'Capacity (h)', 'Allocated (h)', 'Available (h)', 'Balance (h)', 'Utilization (%)', 'Status'];
     const csvContent = [
       headers.join(','),

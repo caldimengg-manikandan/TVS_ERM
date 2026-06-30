@@ -42,7 +42,6 @@ const NAV_ITEMS: (NavItem | { section: string })[] = [
   { label: 'Reports', icon: BarChart3, href: '/reports' },
   
   { section: 'Administration', roles: [UserRole.SUPER_ADMIN, UserRole.ADMIN] } as NavItem & { section: string },
-  { label: 'Departments', icon: Building2, href: '/departments', roles: [UserRole.SUPER_ADMIN, UserRole.ADMIN] },
   { label: 'Audit Logs', icon: Shield, href: '/audit-logs', roles: [UserRole.SUPER_ADMIN, UserRole.ADMIN] },
   { label: 'Settings', icon: Settings, href: '/settings' },
 ];

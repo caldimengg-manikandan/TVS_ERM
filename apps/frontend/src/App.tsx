@@ -29,7 +29,6 @@ const AttendancePage = lazy(() => import('./pages/attendance/AttendancePage'));
 const TasksPage = lazy(() => import('./pages/tasks/TasksPage'));
 const ReportsPage = lazy(() => import('./pages/reports/ReportsPage'));
 const AuditLogsPage = lazy(() => import('./pages/admin/AuditLogsPage'));
-const DepartmentsPage = lazy(() => import('./pages/admin/DepartmentsPage'));
 const SettingsPage = lazy(() => import('./pages/settings/SettingsPage'));
 const ForgotPasswordPage = lazy(() => import('./pages/auth/ForgotPasswordPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
@@ -90,7 +89,6 @@ function App() {
 
                     {/* Admin */}
                     <Route path="/audit-logs" element={<AuditLogsPage />} />
-                    <Route path="/departments" element={<DepartmentsPage />} />
                     <Route path="/settings" element={<SettingsPage />} />
                   </Route>
                 </Route>

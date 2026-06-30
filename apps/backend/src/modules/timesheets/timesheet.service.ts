@@ -362,7 +362,68 @@ export class TimesheetService {
       actualHours: data.totalActualHours
     })).sort((a, b) => b.actualHours - a.actualHours);
 
-    return { allEmployees, worstPerformers, bestPerformers };
+    // Project-based Summary (Resource Allocation)
+    const allocations = await prisma.resourceAllocation.findMany({
+      include: {
+        project: true
+      }
+    });
+
+    const timesheetEntries = await prisma.timesheetEntry.findMany({
+      where: {
+        projectId: { in: allocations.map((a: any) => a.projectId) }
+      }
+    });
+
+    const projectMap = new Map();
+
+    for (const alloc of allocations) {
+      if (!projectMap.has(alloc.projectId)) {
+        projectMap.set(alloc.projectId, {
+          project: alloc.project,
+          allocatedHours: 0,
+          actualHours: 0
+        });
+      }
+      projectMap.get(alloc.projectId).allocatedHours += alloc.allocatedHours;
+    }
+
+    for (const entry of timesheetEntries) {
+      if (entry.projectId && projectMap.has(entry.projectId)) {
+        projectMap.get(entry.projectId).actualHours += (entry.totalHours || 0);
+      }
+    }
+
+    const overrunProjects: any[] = [];
+    const savedProjects: any[] = [];
+    const allProjects: any[] = [];
+
+    for (const data of projectMap.values()) {
+      const difference = data.actualHours - data.allocatedHours;
+      const row = {
+        project: data.project,
+        allocatedHours: data.allocatedHours,
+        actualHours: data.actualHours,
+        difference: Math.abs(difference)
+      };
+      
+      allProjects.push(row);
+
+      if (difference > 0) {
+        overrunProjects.push(row);
+      } else if (difference < 0) {
+        savedProjects.push(row);
+      }
+    }
+
+    overrunProjects.sort((a: any, b: any) => b.difference - a.difference);
+    savedProjects.sort((a: any, b: any) => b.difference - a.difference);
+    allProjects.sort((a: any, b: any) => b.actualHours - a.actualHours);
+
+    return { 
+      allEmployees, worstPerformers, bestPerformers,
+      allProjects, overrunProjects, savedProjects 
+    };
   }
 }
 
